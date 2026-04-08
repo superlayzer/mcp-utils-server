@@ -26,7 +26,11 @@ function createMcpServer(): McpServer {
   return server;
 }
 
-const app = new Hono();
+type Bindings = {
+  MCP_API_KEY?: string;
+};
+
+const app = new Hono<{ Bindings: Bindings }>();
 
 app.use(
   "*",
@@ -50,7 +54,7 @@ app.get("/", (c) => c.json({ name: "mcp-utils-server", version: "1.0.0" }));
 // Set MCP_API_KEY env var to require Bearer token auth.
 // If not set, the server is open access.
 app.use("/mcp", async (c, next) => {
-  const apiKey = process.env.MCP_API_KEY;
+  const apiKey = c.env.MCP_API_KEY ?? process.env.MCP_API_KEY;
   if (!apiKey) return next();
 
   const auth = c.req.header("Authorization");
