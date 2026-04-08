@@ -35,6 +35,7 @@ app.use(
     allowMethods: ["GET", "POST", "DELETE", "OPTIONS"],
     allowHeaders: [
       "Content-Type",
+      "Authorization",
       "mcp-session-id",
       "Last-Event-ID",
       "mcp-protocol-version",
@@ -44,6 +45,20 @@ app.use(
 );
 
 app.get("/", (c) => c.json({ name: "mcp-utils-server", version: "1.0.0" }));
+
+// Optional API key authentication.
+// Set MCP_API_KEY env var to require Bearer token auth.
+// If not set, the server is open access.
+app.use("/mcp", async (c, next) => {
+  const apiKey = process.env.MCP_API_KEY;
+  if (!apiKey) return next();
+
+  const auth = c.req.header("Authorization");
+  if (auth !== `Bearer ${apiKey}`) {
+    return c.json({ error: "Unauthorized" }, 401);
+  }
+  return next();
+});
 
 app.all("/mcp", async (c) => {
   const { req, res } = toReqRes(c.req.raw);
